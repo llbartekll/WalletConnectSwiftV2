@@ -9,6 +9,8 @@ enum WalletConnectError: Error, CustomStringConvertible {
     case unauthorizedMatchingController
     case noSequenceForTopic
     case pairingProposalGenerationFailed
+    case deserialisationFailed
+    case keyNotFound
 
     // 2000 (Timeout)
     // 3000 (Unauthorized)
@@ -27,6 +29,10 @@ enum WalletConnectError: Error, CustomStringConvertible {
             return 0000000
         case .pairingProposalGenerationFailed:
             return 0000000
+        case .deserialisationFailed:
+            return 000
+        case .keyNotFound:
+            return 0000
         case .noSequenceForTopic:
             return 0000000
         case .notApproved:
@@ -47,6 +53,10 @@ enum WalletConnectError: Error, CustomStringConvertible {
             return "unauthorizedMatchingController"
         case .pairingProposalGenerationFailed:
             return "pairingProposalGenerationFailed"
+        case .deserialisationFailed:
+            return "deserialisationFailed"
+        case .keyNotFound:
+            return "keyNotFound"
         case .notApproved:
             return "Session not approved"
         case .unAuthorizedTargetChain:
