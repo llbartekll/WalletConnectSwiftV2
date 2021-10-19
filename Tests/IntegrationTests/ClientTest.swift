@@ -8,15 +8,16 @@ final class ClientTests: XCTestCase {
     var proposer: ClientDelegate!
     var responder: ClientDelegate!
     override func setUp() {
-        proposer = Self.makeClientDelegate(isController: false, url: url)
-        responder = Self.makeClientDelegate(isController: true, url: url)
+        proposer = Self.makeClientDelegate(isController: false, url: url, loggerSuffix: "🍏P")
+        responder = Self.makeClientDelegate(isController: true, url: url, loggerSuffix: "🍎R")
     }
 
-    static func makeClientDelegate(isController: Bool, url: URL) -> ClientDelegate {
+    static func makeClientDelegate(isController: Bool, url: URL, loggerSuffix: String) -> ClientDelegate {
         let options = WalletClientOptions(apiKey: "", name: "", isController: isController, metadata: AppMetadata(name: nil, description: nil, url: nil, icons: nil), relayURL: url)
-        let client = WalletConnectClient(options: options)
-        client.pairingEngine.sequencesStore = PairingDictionaryStore(logger: MuteLogger())
-        client.sessionEngine.sequencesStore = SessionDictionaryStore(logger: MuteLogger())
+        let logger = ConsoleLogger(suffix: loggerSuffix)
+        let client = WalletConnectClient(options: options, logger: logger)
+        client.pairingEngine.sequencesStore = PairingDictionaryStore(logger: logger)
+        client.sessionEngine.sequencesStore = SessionDictionaryStore(logger: logger)
         return ClientDelegate(client: client)
     }
     
@@ -111,7 +112,8 @@ final class ClientTests: XCTestCase {
             self.proposer.client.request(params: requestParams) { result in
                 switch result {
                 case .success(let jsonRpcResponse):
-                    XCTAssertEqual(jsonRpcResponse.result, responseParams)
+                    let response = try! jsonRpcResponse.result.get(String.self)
+                    XCTAssertEqual(response, responseParams)
                     responseExpectation.fulfill()
                 case .failure(_):
                     XCTFail()

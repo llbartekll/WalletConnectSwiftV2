@@ -17,8 +17,23 @@ public final class WalletConnectClient {
     public init(options: WalletClientOptions) {
         self.isController = options.isController
         self.metadata = options.metadata
-        let wakuRelay = WakuNetworkRelay(transport: JSONRPCTransport(url: options.relayURL))
-        self.relay = WalletConnectRelay(networkRelayer: wakuRelay, crypto: crypto)        let sessionSequencesStore = SessionUserDefaultsStore(logger: logger)
+        let wakuRelay = WakuNetworkRelay(transport: JSONRPCTransport(url: options.relayURL), logger: logger)
+        self.relay = WalletConnectRelay(networkRelayer: wakuRelay, crypto: crypto, logger: logger)
+        let sessionSequencesStore = SessionUserDefaultsStore(logger: logger)
+        let pairingSequencesStore = PairingUserDefaultsStore(logger: logger)
+        self.pairingEngine = PairingEngine(relay: relay, crypto: crypto, subscriber: WCSubscriber(relay: relay, logger: logger), sequencesStore: pairingSequencesStore, isController: isController, metadata: metadata, logger: logger)
+        self.sessionEngine = SessionEngine(relay: relay, crypto: crypto, subscriber: WCSubscriber(relay: relay, logger: logger), sequencesStore: sessionSequencesStore, isController: isController, metadata: metadata, logger: logger)
+
+        setUpEnginesCallbacks()
+        secureStorage.setAPIKey(options.apiKey)
+    }
+    
+    init(options: WalletClientOptions, logger: BaseLogger = MuteLogger()) {
+        self.isController = options.isController
+        self.metadata = options.metadata
+        let wakuRelay = WakuNetworkRelay(transport: JSONRPCTransport(url: options.relayURL), logger: logger)
+        self.relay = WalletConnectRelay(networkRelayer: wakuRelay, crypto: crypto, logger: logger)
+        let sessionSequencesStore = SessionUserDefaultsStore(logger: logger)
         let pairingSequencesStore = PairingUserDefaultsStore(logger: logger)
         self.pairingEngine = PairingEngine(relay: relay, crypto: crypto, subscriber: WCSubscriber(relay: relay, logger: logger), sequencesStore: pairingSequencesStore, isController: isController, metadata: metadata, logger: logger)
         self.sessionEngine = SessionEngine(relay: relay, crypto: crypto, subscriber: WCSubscriber(relay: relay, logger: logger), sequencesStore: sessionSequencesStore, isController: isController, metadata: metadata, logger: logger)
@@ -58,7 +73,7 @@ public final class WalletConnectClient {
         pairingEngine.respond(to: proposal) { [unowned self] result in
             switch result {
             case .success(let settledPairing):
-                print("Pairing Success")
+                logger.debug("Pairing Success")
                 self.delegate?.didSettle(pairing: settledPairing)
             case .failure(let error):
                 print("Pairing Failure: \(error)")
